@@ -52,32 +52,70 @@ suppressPackageStartupMessages(library(dplyr))
 Data provided by Ignacio Tiznado Aitken was imported and cleaned as follows (code not run):
 
 ```{r, eval=FALSE}
-d = readr::read_delim("~/hd/data/raw/od/EOD2012_Stgo.csv", delim = ";")
-names(d) 
-names_include = grep("Zon|Coord|Mod", names(d))
-d = d[names_include] %>% 
-    filter(ZonaOrigen < 999, ZonaOrigen > 0, ZonaDestino < 999, ZonaDestino > 0) %>%
+d_orig = readr::read_csv2("~/data/data/raw/od/EOD2012_Stgo.csv")
+n = names(d_orig) 
+names_include = which(validUTF8(n))
+# names_include = grep("Zon|Coord|Mod", names(d))
+d = d_orig %>% 
+  select(names_include) %>% 
+  filter(ZonaOrigen < 999, ZonaOrigen > 0, ZonaDestino < 999, ZonaDestino > 0) %>%
   filter(ZonaOrigen != ZonaDestino)
 summary(d$OrigenCoordX)
 summary(d$ZonaOrigen) # 800+ zones
 unique(d$ModoAgregado) # what are the mode codes?
+hist(d$`Total (FV*FP)`)
 d_agg_zone = d %>% 
   group_by(ZonaOrigen, ZonaDestino) %>% 
-  summarise(n = n())
+  summarise(n = n(), av_weight = mean(`Total (FV*FP)`), all = n() * mean(`Total (FV*FP)`))
 summary(factor(d_agg_zone$ZonaOrigen))
-d_agg_sub = d_agg_zone %>% 
-  filter(n > 15)
+summary(d_agg_zone$all)
+sum(d_agg_zone$all)
 
 # geo data
-download.file("http://www.sectra.gob.cl/descargas/encuestas_movilidad/santiago/Zonificacion_EOD2012.zip", "Zonificacion_EOD2012.zip")
-unzip("Zonificacion_EOD2012.zip")
-z = sf::read_sf("Zonificacion_EOD2012.shp")
+# download.file("http://www.sectra.gob.cl/descargas/encuestas_movilidad/santiago/Zonificacion_EOD2012.zip", "Zonificacion_EOD2012.zip")
+# unzip("Zonificacion_EOD2012.zip")
+z_orig = sf::read_sf("Zonificacion_EOD2012.shp")
+z = z_orig %>% 
+  sf::st_transform(4326)
 summary(z)
 z = sf::st_sf(data.frame(geo_code = 1:max(d$ZonaOrigen)), geometry = z$geometry)
 
-od_agg_zone_sub = stplanr::od2line(flow = d_agg_sub, z)
-mapview::mapview(od_agg_zone_sub)
+u = "http://datos.cedeus.cl/geoserver/wfs?srsName=EPSG%3A4326&typename=geonode%3Acomunas_1&outputFormat=json&version=1.0.0&service=WFS&request=GetFeature"
+comunas = sf::read_sf(u)
+comunas$COMUNA
+centre = comunas %>% 
+  filter(grepl(pattern = "SANTIAGO|PROVIDENCIA", COMUNA))
+
+mapview::mapview(centre)
+z_cents = sf::st_centroid(z)
+z_cents = z_cents[centre, ]
+mapview::mapview(z_cents)
+z_centre = z[z$geo_code %in% z_cents$geo_code, ]
+mapview::mapview(z_centre)
+
+d_agg_sub = d_agg_zone %>% 
+  filter(ZonaOrigen %in% z_centre$geo_code, ZonaDestino %in% z_centre$geo_code) %>% 
+  ungroup() %>% 
+  top_n(200, all)  
+
+od_agg_zone_sub = stplanr::od2line(flow = d_agg_sub, z_centre)
+mapview::mapview(od_agg_zone_sub) +
+  mapview::mapview(z_centre)
+
+# add variables on mode share
+pcycle_current = runif(n = nrow(od_agg_zone_sub), min = 0.01, max = 0.06)
+pcycle_govtarget = pcycle_current * 2
+pcycle_godutch = pcycle_current * 8
+od_agg_zone_sub$bicycle = od_agg_zone_sub$all * pcycle_current
+od_agg_zone_sub$govtarget_slc = od_agg_zone_sub$all * pcycle_govtarget
+od_agg_zone_sub$godutch_slc = od_agg_zone_sub$all * pcycle_godutch
+
+# save data
+saveRDS(comunas, "comunas.Rds")
+saveRDS(z_centre, "z_centre.Rds")
 saveRDS(od_agg_zone_sub, "od_agg_zone_sub.Rds")
+piggyback::pb_upload("z_centre.Rds")
+piggyback::pb_upload("comunas.Rds")
 piggyback::pb_upload("od_agg_zone_sub.Rds")
 piggyback::pb_download_url("od_agg_zone_sub.Rds")
 ```
@@ -89,8 +127,7 @@ We can explore the OD data as follows:
 ```{r maps2}
 u = "https://github.com/pedalea/pctSantiago/releases/download/0.0.1/od_agg_zone_sub.Rds"
 download.file(u, destfile = "od_agg_zone_sub.Rds")
-desire_lines = readRDS("od_agg_zone_sub.Rds") %>%
-  sf::st_transform(4326)
+desire_lines = readRDS("od_agg_zone_sub.Rds")
 plot(desire_lines)
 library(leaflet)
 # leaflet() %>% 
