@@ -46,8 +46,8 @@ export default class GeoJSONComponent extends React.Component {
                                     bounds = L.latLngBounds(southWest, northEast);
                                     this.props.map && this.props.map.fitBounds(bounds)
                             } else {
-                                var geojsonLayer = L.geoJson(geojson)
-                                const bbox = geojsonLayer.getBounds()
+                                const geojsonLayer = L.geoJson(geojson)
+                                const bbox = geojsonLayer.getBounds()                                
                                 // assuming parent has provided "map" object
                                 this.props.map && this.props.map.fitBounds(bbox)
                             }

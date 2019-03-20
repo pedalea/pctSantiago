@@ -112,6 +112,7 @@ export default class Welcome extends Component {
                     </p>
                 </Control>
                 {/* #ADD_COMPONENT */}
+                <GeoJSONComponent style={{color:'#3388ff'}} fetchURL='http://localhost:8000/api/comunas' map={ this.state.map } />
             </Map>
         );
     }

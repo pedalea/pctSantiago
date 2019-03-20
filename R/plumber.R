@@ -1,5 +1,6 @@
 #' plumber 0.4.6
 require("osmdata")
+require("geojsonsf")
 # Enable CORS -------------------------------------------------------------
 #' CORS enabled for now. See docs of plumber
 #' for disabling it for any endpoint we want in future
@@ -45,6 +46,21 @@ bb_json <- paste0("[", bb[2,1], ",", bb[1,1], ",",
 uol_geojson <- function(res){
   res$headers$`Content-type` <- "application/json"
   res$body <- bb_json
+  res
+}
+
+url <-  "https://github.com/pedalea/pctSantiago/releases/download/0.0.1/comunas.Rds"
+path <- file.path(tempdir(), "comunas.Rds")
+if(!exists(path))
+   utils::download.file(url, path)
+comunas <- readRDS(path)
+comunas <- comunas[,c("COMUNA", "geometry")]
+comunas <- geojsonsf::sf_geojson(comunas)
+#' Get comunas
+#' @get /api/comunas
+comunas_geojson <- function(res){
+  res$headers$`Content-type` <- "application/json"
+  res$body <- comunas
   res
 }
 

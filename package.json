@@ -4,6 +4,7 @@
   "private": true,
   "dependencies": {
     "leaflet": "^1.4.0",
+    "marked": "^0.6.1",
     "prop-types": "^15.6.2",
     "react": "^16.7.0",
     "react-bootstrap": "^0.32.4",
