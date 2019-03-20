@@ -52,7 +52,7 @@ suppressPackageStartupMessages(library(dplyr))
 Data provided by Ignacio Tiznado Aitken was imported and cleaned as follows (code not run):
 
 ```{r, eval=FALSE}
-d_orig = readr::read_csv2("~/data/data/raw/od/EOD2012_Stgo.csv")
+d_orig = readr::read_csv2("https://github.com/pedalea/pctSantiago/releases/download/0.0.1/EOD2012_Stgo.csv")
 n = names(d_orig) 
 names_include = which(validUTF8(n))
 # names_include = grep("Zon|Coord|Mod", names(d))
