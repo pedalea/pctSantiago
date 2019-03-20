@@ -2,3 +2,6 @@
 .Rhistory
 .RData
 .Ruserdata
+Zonificacion_EOD2012.*
+*.Rds
+ZONIFICACION_EOD2012.DBF
