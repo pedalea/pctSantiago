@@ -94,16 +94,12 @@ export default class GeoJSONComponent extends React.Component {
             }
         }
         // we have type: "FeatureCollection"
+        console.log(geojson.features.length)
         return (
             geojson.features.map((feature, i) => {
                 return (
                     <GeoJSON
                         key={JSON.stringify(feature) + radius}
-                        style={{
-                            weight: 0.5 + feature.properties[this.props.style.weight],
-                            color: "hsl(" + feature.properties[this.props.style.color] + ",100%, 50%)",
-                            fillColor: "hsl(" + (+(feature.properties[this.props.style.fillColor]) * 2000) + ",100%, 50%)"
-                        }}
                         data={feature}
                         onEachFeature={(feature, layer) => {
                             const properties = Object.keys(feature.properties).map((key) => {
