@@ -62,11 +62,20 @@ d = d_orig %>%
   filter(ZonaOrigen != ZonaDestino)
 summary(d$OrigenCoordX)
 summary(d$ZonaOrigen) # 800+ zones
-unique(d$ModoAgregado) # what are the mode codes?
+table(d$ModoAgregado) # what are the mode codes?
 hist(d$`Total (FV*FP)`)
-d_agg_zone = d %>% 
-  group_by(ZonaOrigen, ZonaDestino) %>% 
-  summarise(n = n(), av_weight = mean(`Total (FV*FP)`), all = n() * mean(`Total (FV*FP)`))
+d_agg_zone = d %>%
+  group_by(ZonaOrigen, ZonaDestino) %>%
+  summarise(
+  n = n(),
+  av_weight = mean(`Total (FV*FP)`),
+  all = n() * mean(`Total (FV*FP)`),
+  range_weights = diff(range(`Total (FV*FP)`)),
+  pcycle = (sum(ModoAgregado == 18) * mean(`Total (FV*FP)`[ModoAgregado == 18]))  /
+    (n() * mean(`Total (FV*FP)`))
+  )
+d_agg_zone$pcycle[is.nan(d_agg_zone$pcycle)] = 0
+summary(d_agg_zone$pcycle)
 summary(factor(d_agg_zone$ZonaOrigen))
 summary(d_agg_zone$all)
 sum(d_agg_zone$all)
@@ -97,16 +106,16 @@ d_agg_sub = d_agg_zone %>%
   filter(ZonaOrigen %in% z_centre$geo_code, ZonaDestino %in% z_centre$geo_code) %>% 
   ungroup() %>% 
   top_n(200, all)  
+summary(d_agg_sub$n)
 
 od_agg_zone_sub = stplanr::od2line(flow = d_agg_sub, z_centre)
 mapview::mapview(od_agg_zone_sub) +
   mapview::mapview(z_centre)
 
 # add variables on mode share
-pcycle_current = runif(n = nrow(od_agg_zone_sub), min = 0.01, max = 0.06)
-pcycle_govtarget = pcycle_current * 2
-pcycle_godutch = pcycle_current * 8
-od_agg_zone_sub$bicycle = od_agg_zone_sub$all * pcycle_current
+pcycle_govtarget = od_agg_zone_sub$pcycle * 2
+pcycle_godutch = od_agg_zone_sub$pcycle * 8
+od_agg_zone_sub$bicycle = od_agg_zone_sub$all * od_agg_zone_sub$pcycle
 od_agg_zone_sub$govtarget_slc = od_agg_zone_sub$all * pcycle_govtarget
 od_agg_zone_sub$godutch_slc = od_agg_zone_sub$all * pcycle_godutch
 
@@ -133,6 +142,8 @@ library(leaflet)
 # leaflet() %>% 
 #   addTiles() %>% 
 #   addPolylines(data = desire_lines )
+mapview::mapview(od_agg_zone_sub, zcol = "bicycle") +
+  mapview::mapview(z_centre)
 ```
 
 ## Route generation and analysis
