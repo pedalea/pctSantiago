@@ -67,15 +67,6 @@ export default class RBSidebar extends Component {  // note we're extending MapC
             style={{
                 minWidth: '200px'
             }}>
-                <RBSlider 
-                        min={SLIDER_MIN}
-                        max={SLIDER_MAX}
-                        value={SLIDER_MAX}
-                        pure={true}
-                        onChange={(value) => typeof(this.props.onChange) === 'function' &&  
-                        this.props.onChange(value)}
-                    />
-                    <h5>Showing {this.state.arcCount} flows.</h5>
             </div>
         )
     }
