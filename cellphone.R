@@ -15,6 +15,6 @@ hist(cellagg$n)
 summary(cellagg$n)
 cellagg_sub = cellagg %>% 
   filter(n > 50)
-celld = stplanr::od_coords2line(odc = cellagg_sub[3:6], crs = 5361)
+celld = stplanr::od_coords2line(odc = cellagg_sub[3:6], crs = 32719)
 plot(celld)
 mapview::mapview(celld)
